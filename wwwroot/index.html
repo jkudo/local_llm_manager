@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Chat</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+  #header { background: #16213e; padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #0f3460; }
+  #header h1 { font-size: 18px; color: #e94560; }
+  #model-info { font-size: 13px; color: #888; }
+  #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { align-self: flex-end; background: #0f3460; color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai { align-self: flex-start; background: #16213e; color: #e0e0e0; border-bottom-left-radius: 4px; border: 1px solid #0f3460; }
+  .msg .role { font-size: 11px; color: #888; margin-bottom: 4px; }
+  #input-area { background: #16213e; padding: 12px 20px; display: flex; gap: 10px; border-top: 1px solid #0f3460; }
+  #input { flex: 1; padding: 10px 14px; border: 1px solid #0f3460; border-radius: 8px; background: #1a1a2e; color: #e0e0e0; font-size: 14px; outline: none; resize: none; }
+  #input:focus { border-color: #e94560; }
+  #send { padding: 10px 20px; background: #e94560; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  #send:hover { background: #c73650; }
+  #send:disabled { background: #555; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>🤖 Local Chat</h1>
+  <span id="model-info">Loading...</span>
+</div>
+<div id="chat"></div>
+<div id="input-area">
+  <textarea id="input" rows="1" placeholder="Type a message..." autofocus></textarea>
+  <button id="send">Send</button>
+</div>
+<script>
+const API_BASE = window.location.origin.replace(/:\d+$/, ':' + (new URLSearchParams(window.location.search).get('apiPort') || '55588'));
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const modelInfo = document.getElementById('model-info');
+let modelId = '';
+
+async function loadModels() {
+  try {
+    const res = await fetch(API_BASE + '/v1/models');
+    const data = await res.json();
+    if (data.data && data.data.length > 0) {
+      modelId = data.data[0].id;
+      modelInfo.textContent = 'Model: ' + modelId;
+    }
+  } catch (e) {
+    modelInfo.textContent = 'API not available';
+  }
+}
+
+function addMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+  div.innerHTML = '<div class="role">' + (role === 'user' ? '🧑 You' : '🤖 AI') + '</div>' + escapeHtml(text);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || !modelId) return;
+  input.value = '';
+  sendBtn.disabled = true;
+
+  addMessage('user', text);
+  const aiDiv = addMessage('ai', '');
+  const contentSpan = aiDiv.querySelector('.role').nextSibling || aiDiv.appendChild(document.createTextNode(''));
+
+  try {
+    const res = await fetch(API_BASE + '/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          { role: 'system', content: 'Reply in the same language as the user\'s input.' },
+          { role: 'user', content: text }
+        ],
+        stream: true
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let aiText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content;
+          if (delta) {
+            aiText += delta;
+            // Update text content after role label
+            const roleDiv = aiDiv.querySelector('.role');
+            roleDiv.nextSibling ? roleDiv.nextSibling.textContent = aiText : aiDiv.appendChild(document.createTextNode(aiText));
+            chat.scrollTop = chat.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+  } catch (e) {
+    const roleDiv = aiDiv.querySelector('.role');
+    const errText = 'Error: ' + e.message;
+    roleDiv.nextSibling ? roleDiv.nextSibling.textContent = errText : aiDiv.appendChild(document.createTextNode(errText));
+  }
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+loadModels();
+</script>
+</body>
+</html>
