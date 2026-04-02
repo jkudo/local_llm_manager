@@ -25,4 +25,13 @@
     <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="installer-bootstrapper\**\*.cs" />
+    <Compile Remove="launcher\**\*.cs" />
+    <EmbeddedResource Remove="installer-bootstrapper\**\*" />
+    <EmbeddedResource Remove="launcher\**\*" />
+    <None Remove="installer-bootstrapper\**\*" />
+    <None Remove="launcher\**\*" />
+  </ItemGroup>
+
 </Project>

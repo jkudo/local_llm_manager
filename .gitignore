@@ -1,6 +1,7 @@
 bin/
 obj/
 installer_output/
+wix/AppFiles.generated.wxs
 *.user
 *.suo
 .vs/
