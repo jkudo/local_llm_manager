@@ -68,8 +68,8 @@ The commands below assume the default install folder: `C:\Program Files\Local LL
 If you installed the app in a custom folder, replace the install path accordingly.
 
 1. Download `setup-runtime-files.ps1` from GitHub and place it in any local folder.
-  - Repository file: https://github.com/jkudo/jkudo-local_llm_manager/blob/master/setup-runtime-files.ps1
-  - Direct download: https://raw.githubusercontent.com/jkudo/jkudo-local_llm_manager/refs/heads/master/setup-runtime-files.ps1
+  - Repository file: https://github.com/jkudo/local_llm_manager/blob/master/setup-runtime-files.ps1
+  - Direct download: https://raw.githubusercontent.com/jkudo/local_llm_manager/refs/heads/master/setup-runtime-files.ps1
 
 2. Open PowerShell in that folder and run:
 

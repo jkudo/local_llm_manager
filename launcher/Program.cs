@@ -30,10 +30,10 @@ if (missing.Count > 0)
     }
     Console.WriteLine();
     Console.WriteLine("Setup script:");
-    Console.WriteLine("  https://raw.githubusercontent.com/jkudo/jkudo-local_llm_manager/refs/heads/master/setup-runtime-files.ps1");
+    Console.WriteLine("  https://raw.githubusercontent.com/jkudo/local_llm_manager/refs/heads/master/setup-runtime-files.ps1");
     Console.WriteLine();
     Console.WriteLine("Run these commands in PowerShell:");
-    Console.WriteLine("  $url = \"https://raw.githubusercontent.com/jkudo/jkudo-local_llm_manager/refs/heads/master/setup-runtime-files.ps1\"");
+    Console.WriteLine("  $url = \"https://raw.githubusercontent.com/jkudo/local_llm_manager/refs/heads/master/setup-runtime-files.ps1\"");
     Console.WriteLine("  Invoke-WebRequest -Uri $url -OutFile .\\setup-runtime-files.ps1");
     Console.WriteLine("  .\\setup-runtime-files.ps1");
     Console.WriteLine();
