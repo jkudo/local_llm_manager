@@ -6,6 +6,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# If installing to Program Files, require administrator privileges
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$targetDir = if ($PSBoundParameters.ContainsKey('InstallDir')) { $InstallDir } else { "$env:ProgramFiles\Local LLM Manager" }
+if ($targetDir -like "$env:ProgramFiles*" -and -not $isAdmin) {
+    Write-Error "Administrator privileges are required to write to '$targetDir'.`nPlease run this script from an elevated PowerShell (Run as Administrator)."
+    exit 1
+}
+
 function Assert-CommandExists {
     param([string]$CommandName)
 
